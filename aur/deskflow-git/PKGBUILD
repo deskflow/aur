@@ -1,0 +1,78 @@
+pkgname=deskflow-git
+pkgver=1.18.0.0
+pkgrel=1
+pkgdesc='Share one mouse and keyboard between multiple computers'
+url='https://deskflow.org/'
+arch=('i686' 'x86_64' 'armv7h' 'aarch64')
+license=(LicenseRef-GPL-2.0-only-WITH-OpenSSL-Exception)
+conflicts=('synergy-git' 'synergy-1.6' 'synergy1-bin' 'synergy2-bin' 'synergy3-bin' 'synergy3-beta-bin' 'synergy3-stable-bin' 'barrier' 'barrier-git' 'barrier-headless' 'barrier-headless-git' 'input-leap' 'input-leap-git' 'input-leap-headless-git' 'input-leap-headless' 'waynergy' 'waynergy-git' 'qsynergy' 'slim-synergy' 'quicksynergy' 'deskflow')
+provides=("deskflow-git${pkgver}")
+depends=(
+  gcc-libs
+  gdk-pixbuf2
+  glib2
+  glibc
+  hicolor-icon-theme
+  libei
+  libglvnd
+  libice
+  libnotify
+  libportal
+  libsm
+  libx11
+  libxext
+  libxi
+  libxinerama
+  libxkbcommon
+  libxkbcommon-x11
+  libxkbfile
+  libxrandr
+  libxtst
+  openssl
+  pugixml
+  qt6-base
+  tomlplusplus
+)
+makedepends=(
+  cli11
+  cmake
+  git
+  gtest
+  ninja
+  python
+  qt6-tools
+  xorgproto
+)
+
+source=("deskflow-git::git+https://github.com/deskflow/deskflow.git")
+sha256sums=('SKIP')
+
+build() {
+  cd "${pkgname}"
+  cmake \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_C_FLAGS="${CFLAGS}" \
+    -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
+    -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS}" \
+    -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
+    -Wno-dev \
+    -G Ninja \
+    -B build \
+    -S .
+  cmake --build build --verbose
+}
+
+check() {
+  cd "${pkgname}"
+  export QT_QPA_PLATFORM=offscreen
+  ./build/bin/unittests
+  ./build/bin/integtests
+}
+
+package() {
+  cd "${pkgname}"
+  DESTDIR="${pkgdir}" cmake --install build
+}
+
+# vim: ts=2 sw=2 et:

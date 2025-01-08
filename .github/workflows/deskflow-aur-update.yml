@@ -1,0 +1,53 @@
+# 2024 Chris Rizzitello <sithord48@gmail.com>
+# Simple job to check if continuous tag on deskflow/deskflow was updated
+# Update the aur package deskflow-git
+
+name: Update deskflow-dev
+on:
+  workflow_dispatch:
+#  schedule:
+#    - cron: "2,22,42 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-deskflow-git:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux
+      options: --privileged
+    timeout-minutes: 10
+    steps:
+      - name: install wget
+        run : pacman -Syu --noconfirm wget git
+      - uses: actions/checkout@v4
+      - name: setup ENV
+        run: |
+          export oldVersion=$(cat aur/deskflow-git/PKGBUILD | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+')
+          wget https://github.com/deskflow/deskflow/releases/download/continuous/sums.txt -q
+          export newVersion=$(cat sums.txt | grep Build: | sed  -e 's/Build: //g')
+          if [[ "$oldVersion" != "$newVersion" ]]; then
+              echo "newVersion is $newVersion"
+              git config --global --add safe.directory $GITHUB_WORKSPACE
+              sed -i  "s/pkgver=.*/pkgver=$newVersion/" aur/deskflow-git/PKGBUILD
+              sed -i  "s/pkgver = .*/pkgver = $newVersion/" aur/deskflow-git/.SRCINFO
+              git config --global user.name "${{github.actor}}"
+              git config --global user.email "${{github.actor}}@users.noreply.github.com"
+              git commit aur/deskflow-git/PKGBUILD aur/deskflow-git/.SRCINFO -m "deskflow-git: $newVersion"
+              git push -u origin HEAD
+           else
+              echo "Nothing to update"
+          fi
+  aur-update-git:
+    needs: update-deskflow-git
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux
+      options: --privileged
+    steps:
+      - name: AUR Update Git
+        uses: TheWisker/aur-update-git@master
+        with:
+          repo_name: deskflow-git
+          aur_key: ${{ secrets.AUR_KEY }}
