@@ -1,5 +1,5 @@
 pkgname=deskflow-git
-pkgver=1.18.0.0
+pkgver=1.18.0.82
 pkgrel=1
 pkgdesc='Share one mouse and keyboard between multiple computers'
 url='https://deskflow.org/'
